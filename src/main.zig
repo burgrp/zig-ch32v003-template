@@ -1,17 +1,29 @@
 const microzig = @import("microzig");
-const chip = microzig.chip;
+const peri = microzig.chip.peripherals;
 const cpu = microzig.cpu;
 
 pub fn main() !void {
-    chip.peripherals.RCC.APB2PCENR.modify(.{ .IOPCEN = 1 });
+    peri.RCC.APB2PCENR.modify(.{ .IOPCEN = 1 });
 
-    chip.peripherals.GPIOC.CFGLR.modify(.{ .CNF4 = 0, .MODE4 = 1 });
+    peri.PFIC.STK_CTLR.raw = 0;
+    peri.PFIC.STK_CNTL.raw = 0;
+    peri.PFIC.STK_CMPLR.raw = cpu.cpu_frequency / 2 - 1;
+    peri.PFIC.STK_CTLR.modify(.{
+        .STE = 1,
+        .STIE = 1,
+        .STCLK = 1,
+        .STRE = 1,
+    });
+
+    cpu.interrupt.enable(.SysTick);
+
+    peri.GPIOC.CFGLR.modify(.{ .CNF0 = 0, .MODE0 = 1, .CNF4 = 0, .MODE4 = 1 });
 
     while (true) {
-        chip.peripherals.GPIOC.OUTDR.modify(.{ .ODR4 = 1 });
-        busy_delay(1000);
-        chip.peripherals.GPIOC.OUTDR.modify(.{ .ODR4 = 0 });
-        busy_delay(1000);
+        peri.GPIOC.OUTDR.modify(.{ .ODR4 = 1 });
+        busy_delay(500);
+        peri.GPIOC.OUTDR.modify(.{ .ODR4 = 0 });
+        busy_delay(500);
     }
 }
 
@@ -25,4 +37,15 @@ inline fn busy_delay(comptime ms: u32) void {
     while (i < limit) : (i += 1) {
         asm volatile ("" ::: "memory");
     }
+}
+
+pub const microzig_options: microzig.Options = .{
+    .interrupts = .{
+        .SysTick = sys_tick_handler,
+    },
+};
+
+fn sys_tick_handler() callconv(cpu.riscv_calling_convention) void {
+    peri.GPIOC.OUTDR.toggle(.{ .ODR0 = 1 });
+    peri.PFIC.STK_SR.modify(.{ .CNTIF = 0 });
 }
