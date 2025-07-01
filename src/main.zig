@@ -2,8 +2,14 @@ const microzig = @import("microzig");
 const peri = microzig.chip.peripherals;
 const cpu = microzig.cpu;
 
+// This example toggles an LED connected to GPIO pins D0 and D4 on a CH32V003x4.
+// D0 is toggled by the SysTick interrupt every 500ms
+// D4 is toggled in the main loop every 500ms
+
+var cnt: i32 = 0;
+
 pub fn main() !void {
-    peri.RCC.APB2PCENR.modify(.{ .IOPCEN = 1 });
+    peri.RCC.APB2PCENR.modify(.{ .IOPDEN = 1 });
 
     peri.PFIC.STK_CTLR.raw = 0;
     peri.PFIC.STK_CNTL.raw = 0;
@@ -17,13 +23,14 @@ pub fn main() !void {
 
     cpu.interrupt.enable(.SysTick);
 
-    peri.GPIOC.CFGLR.modify(.{ .CNF0 = 0, .MODE0 = 1, .CNF4 = 0, .MODE4 = 1 });
+    peri.GPIOD.CFGLR.modify(.{ .CNF0 = 0, .MODE0 = 1, .CNF4 = 0, .MODE4 = 1 });
 
     while (true) {
-        peri.GPIOC.OUTDR.modify(.{ .ODR4 = 1 });
+        peri.GPIOD.OUTDR.modify(.{ .ODR4 = 1 });
         busy_delay(500);
-        peri.GPIOC.OUTDR.modify(.{ .ODR4 = 0 });
+        peri.GPIOD.OUTDR.modify(.{ .ODR4 = 0 });
         busy_delay(500);
+        cnt += 1;
     }
 }
 
@@ -46,6 +53,6 @@ pub const microzig_options: microzig.Options = .{
 };
 
 fn sys_tick_handler() callconv(cpu.riscv_calling_convention) void {
-    peri.GPIOC.OUTDR.toggle(.{ .ODR0 = 1 });
+    peri.GPIOD.OUTDR.toggle(.{ .ODR0 = 1 });
     peri.PFIC.STK_SR.modify(.{ .CNTIF = 0 });
 }

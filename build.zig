@@ -12,11 +12,7 @@ pub fn build(b: *std.Build) void {
         .target = mb.ports.ch32v.chips.ch32v003x4,
         .optimize = std.builtin.OptimizeMode.ReleaseSmall,
     });
-    const fwStep = mb.add_install_firmware(fw, .{});
 
-    const flash_cmd = b.addSystemCommand(&.{ "wlink", "flash", "--address", "0x08000000" });
-    flash_cmd.addFileArg(fw.get_emitted_bin(.bin));
-    flash_cmd.step.dependOn(&fwStep.step);
-
-    b.step("flash", "Flash firmware onto board").dependOn(&flash_cmd.step);
+    mb.install_firmware(fw, .{ .format = .elf });
+    mb.install_firmware(fw, .{ .format = .bin });
 }

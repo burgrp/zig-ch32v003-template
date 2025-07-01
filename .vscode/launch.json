@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug on PicoRVD",
+      "type": "cppdbg",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/zig-out/firmware/image.elf",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb-multiarch",
+      "miDebuggerServerAddress": "/dev/ttyACM0",
+      "debugServerArgs": "",
+      "setupCommands": [
+        {
+          "text": "-enable-pretty-printing"
+        },
+      ]
+    }
+  ]
+}
